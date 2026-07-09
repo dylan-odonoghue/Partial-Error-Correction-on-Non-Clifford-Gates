@@ -1,1 +1,8 @@
+# Virtual environment
 .venv
+# MNIST dataset
+data/
+# Python cache
+**/__pycache__/
+# Jupyter Notebook
+.ipynb_checkpoints
