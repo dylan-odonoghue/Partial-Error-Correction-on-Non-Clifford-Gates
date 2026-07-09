@@ -9,10 +9,10 @@ set -e
 module load python/3.11.6
 
 # Create a virtual environment in the current directory
-python -m venv partial_qec_venv
+python -m venv .partial_qec_venv
 
 # Load the virtual environment
-source partial_qec_venv/bin/activate
+source .partial_qec_venv/bin/activate
 
 # load in pre-installed modules from setonix
 module load py-numpy/1.25.2

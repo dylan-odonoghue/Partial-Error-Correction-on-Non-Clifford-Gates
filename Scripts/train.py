@@ -264,4 +264,4 @@ def parallel_job(rank, size, num_qubits, layers=2, n_epochs=5, batch_size=50, te
 if __name__ == "__main__":
     # Example usage of the serial job function
     noise_model = depolarising_single_qubit(p_depol=0.01, p_damping=0.001)
-    serial_job(rank, size, 6, noise_model=noise_model, num_shots=10, divide_by=10)  # Example: run the job with 6 qubits and 10 shots
+    serial_job(6, noise_model=noise_model, num_shots=10, divide_by=10)  # Example: run the job with 6 qubits and 10 shots
