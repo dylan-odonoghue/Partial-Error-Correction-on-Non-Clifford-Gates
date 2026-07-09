@@ -5,7 +5,6 @@ This project extends work in partial error correction and analyses the effect of
 ```
 ├── README.md
 ├── Scripts
-│   ├── __pycache__
 │   ├── data
 │   ├── job.ipynb
 │   ├── noise_models.py

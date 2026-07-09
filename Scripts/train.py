@@ -20,7 +20,7 @@ Implements the ADAM optimiser setup from Kang et al.:
   - Metrics logged: loss, avg gradient^2, test accuracy (every test_every batches)
 """
 
-def preprocess_MNIST_data(num_qubits: int, batch_size: int = 50, test_size: int = 200):
+def preprocess_MNIST_data(num_qubits: int, batch_size: int = 50, test_size: int = 200, divide_by: int = 10):
     """
     Preprocess the MNIST dataset for training and testing.
     Args:
@@ -45,25 +45,25 @@ def preprocess_MNIST_data(num_qubits: int, batch_size: int = 50, test_size: int 
     train_dataset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
     test_dataset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
 
-    # Use smaller subsets for quicker training (optional)
-    train_dataset = torch.utils.data.Subset(train_dataset, indices=range(0, len(train_dataset), 10))
-    test_dataset = torch.utils.data.Subset(test_dataset, indices=range(0, len(test_dataset), 10))
+    train_dataset = torch.utils.data.Subset(train_dataset, indices=range(0, len(train_dataset), divide_by))
+    test_dataset = torch.utils.data.Subset(test_dataset, indices=range(0, len(test_dataset), divide_by))
 
     return train_dataset, test_dataset
 
 
 
-def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, test_size=200, noise_model=None, num_shots=10, **kwargs):
+def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, test_size=200, noise_model=None, num_shots=10, *args, **kwargs):
     """
     Function to run the Hybrid Quantum-Classical model. This function is called by the main script.
     """
+    divide_by = 1 if 'divide_by' not in kwargs else kwargs['divide_by']  # Use a smaller subset of the dataset for quicker training
 
     # Check CUDA availability
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
     # Use DataLoader to create batches
-    train_dataset, test_dataset = preprocess_MNIST_data(num_qubits, batch_size=batch_size, test_size=test_size)
+    train_dataset, test_dataset = preprocess_MNIST_data(num_qubits, batch_size=batch_size, test_size=test_size, divide_by=divide_by)
     # Use DataLoader to create batches
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=test_size, shuffle=False)
@@ -262,9 +262,6 @@ def parallel_job(rank, size, num_qubits, layers=2, n_epochs=5, batch_size=50, te
 
 
 if __name__ == "__main__":
-    # Example usage of the parallel job function
-    import os
-    rank = MPI.COMM_WORLD.Get_rank()
-    size = MPI.COMM_WORLD.Get_size()
-
-    parallel_job(rank, size, 6, noise_model=None, num_shots=10)  # Example: run the job with 6 qubits and 10 shots
+    # Example usage of the serial job function
+    noise_model = depolarising_single_qubit(p_depol=0.01, p_damping=0.001)
+    serial_job(rank, size, 6, noise_model=noise_model, num_shots=10, divide_by=10)  # Example: run the job with 6 qubits and 10 shots

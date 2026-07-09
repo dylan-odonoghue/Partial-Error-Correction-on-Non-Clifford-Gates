@@ -102,7 +102,7 @@ class HybridModel(nn.Module):
 
         self.quantum_circuit = quantum_circuit
         quantum_circuit_to_wrap = qml.add_noise(quantum_circuit, self.noise_model) if self.noise_model is not None else quantum_circuit
-        self.quantum = qml.qnn.TorchLayer(quantum_circuit_to_wrap, weight_shapes) # type: ignore
+        self.quantum = qml.qnn.TorchLayer(quantum_circuit_to_wrap, self.weight_shapes)
 
     def forward(self, x):
         """
