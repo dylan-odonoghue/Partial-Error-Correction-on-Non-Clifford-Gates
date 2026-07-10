@@ -20,7 +20,7 @@ export MYENV=.partial_qec_venv
 export VENV_PATH=${NEWSCRATCH}/${MYENV}
 
 # Move to project directory
-cd $MYSCRATCH/Partial-Error-Correction-on-Non-Clifford-Gates
+cd $NEWSCRATCH
 
 # Define the script to run
 PYTHON_SCRIPT_DIR = ${NEWSCRATCH}/Scripts
