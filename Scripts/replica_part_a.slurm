@@ -23,19 +23,19 @@ export VENV_PATH=${NEWSCRATCH}/${MYENV}
 cd $NEWSCRATCH
 
 # Define the script to run
-PYTHON_SCRIPT_DIR = ${NEWSCRATCH}/Scripts
-PYTHONSCRIPT=$PYTHON_SCRIPT_DIR/main.py
+export PYTHON_SCRIPT_DIR=${NEWSCRATCH}/Scripts
+export PYTHONSCRIPT=${PYTHON_SCRIPT_DIR}/main.py
 
 #----
 # Additional Settings needed for this Pytorch script:
-export MIOPEN_USER_DB_PATH="$TMPDIR/miopen"
-export MIOPEN_CUSTOM_CACHE_DIR="$TMPDIR/miopen_cache"
+export MIOPEN_USER_DB_PATH="${TMPDIR}/miopen"
+export MIOPEN_CUSTOM_CACHE_DIR="${TMPDIR}/miopen_cache"
 mkdir -p $MIOPEN_USER_DB_PATH $MIOPEN_CUSTOM_CACHE_DIR
 export RDZV_PORT=29500
 export RDZV_HOST=$(hostname)
 
 # Set MPI related environment variables. (Not all need to be set)
-export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 export OMP_PLACES=cores
 export OMP_PROC_BIND=close
 export MPICH_OFI_STARTUP_CONNECT=1
@@ -44,9 +44,9 @@ export MPICH_OFI_VERBOSE=1
 echo -e "\n\n#------------------------#"
 echo "Code execution:"
 
-srun -N $SLURM_JOB_NUM_NODES -n $SLURM_NTASKS -c $OMP_NUM_THREADS -m block:block:block \
+srun -N ${SLURM_JOB_NUM_NODES} -n ${SLURM_NTASKS} -c ${OMP_NUM_THREADS} -m block:block:block \
  singularity exec ${SINGULARITY_CONTAINER} \
- bash -c "source $VENV_PATH/bin/activate && \
+ bash -c "source ${VENV_PATH}/bin/activate && \
  python3 ${PYTHON_SCRIPT}"
 
 #----
