@@ -1,6 +1,7 @@
 import pennylane as qml
 from pennylane import numpy as np
 import torch
+import torch.ditributed as dist
 from qvc_model import HybridModel
 from noise_models import depolarising_single_qubit, depolarising_two_qubit
 import pickle
@@ -57,6 +58,11 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, test_size=200, n
     """
     divide_by = 1 if 'divide_by' not in kwargs else kwargs['divide_by']  # Use a smaller subset of the dataset for quicker training
     rank = 0 if 'rank' not in kwargs else kwargs['rank']  # Default rank is 0 for serial execution
+    lr = 0.005 if 'lr' not in kwargs else kwargs['lr']  # Learning rate for the optimizer
+    if name := kwargs.get('name') is None:
+        name = f"unnamed_qubits_{num_qubits}_layers_{layers}_epochs_{n_epochs}_batch_{batch_size}_test_{test_size}_shots_{num_shots}"
+    else:
+        name = kwargs['name']
     # Check CUDA availability
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}") if rank == 0 else None
@@ -84,7 +90,7 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, test_size=200, n
     #phi["ZZ"] = 0.00116
     model = HybridModel(dev=dev, device=device, num_qubits=num_qubits, weight_shapes=weight_shapes, num_shots=num_shots, noise_model=noise_model, **kwargs).to(device)
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.005)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     # Training loop
     results = {
@@ -142,14 +148,13 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, test_size=200, n
                 correct += (predicted == labels).sum().item()
                 total   += labels.size(0)
 
-        accuracy = correct / total
-        results["accuracies"][trained_samples] = accuracy
+        results["accuracies"][trained_samples] = correct / total
         model.train()
 
         print(f"Epoch {epoch+1}/{n_epochs} | "
-              f"acc {accuracy:.2%} | "
+              f"acc {results['accuracies'][trained_samples]:.2%} | "
               f"samples seen {trained_samples}")
-    with open(f"results/test_{num_qubits}_qubits_{rank}_.pkl", "wb") as f:
+    with open(f"results/{name}.pkl", "wb") as f:
         pickle.dump(results, f, protocol=pickle.HIGHEST_PROTOCOL)
     return
 
@@ -157,6 +162,7 @@ def parallel_job(rank, size, num_qubits, layers=2, n_epochs=5, batch_size=50, te
     """
     Function to run the Hybrid Quantum-Classical model in parallel. This function is called by the main script.
     """
+    lr = 0.005 if 'lr' not in kwargs else kwargs['lr']  # Learning rate for the optimizer
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.cuda.set_device(rank)
@@ -188,7 +194,7 @@ def parallel_job(rank, size, num_qubits, layers=2, n_epochs=5, batch_size=50, te
 
     # Define loss function and optimizer
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.005)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     # Training loop
     results = {
@@ -251,7 +257,7 @@ def parallel_job(rank, size, num_qubits, layers=2, n_epochs=5, batch_size=50, te
             print(f"Epoch {epoch+1}/{n_epochs} | "
                   f"acc {accuracy:.2f}% | "
                   f"samples seen {trained_samples}")
-        with open(f"results/test_{num_qubits}_qubits_rank{rank}.pkl", "wb") as f:
+        with open(f"results/test_{num_qubits}_qubits_rank_{rank}.pkl", "wb") as f:
             pickle.dump(results, f, protocol=pickle.HIGHEST_PROTOCOL)
     return
 

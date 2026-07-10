@@ -6,3 +6,6 @@ data/
 **/__pycache__/
 # Jupyter Notebook
 .ipynb_checkpoints
+
+# Experimental scripts
+torch_parallel_run.slurm
