@@ -1,19 +1,26 @@
 #!/bin/bash
 # setonix_setup.sh
-# Run once on Setonix to create the python virtual environment in your working directory.
+# Run once on Setonix to create the virtual environment on top of the PyTorch container.
 # Usage: bash setonix_setup.sh
 
-set -e 
+set -e
 
-# Ensure correct python module is loaded
-module load python/3.11.6
+# Load the PyTorch module
+module load pytorch/2.7.1-rocm6.3.3
 
-# Create a virtual environment in the current directory
-python -m venv .partial_qec_venv
+# Get the container path from the module
+echo "Using container: $SINGULARITY_CONTAINER"
 
-# Load the virtual environment
-source .partial_qec_venv/bin/activate
+# Create the virtual environment inside the container
+# --system-site-packages inherits PyTorch and other container packages
+singularity exec $SINGULARITY_CONTAINER \
+    python3 -m venv --system-site-packages \
+    $MYSCRATCH/Partial-Error-Correction-on-Non-Clifford-Gates/.partial_qec_venv
 
-# Install required packages
-pip install --upgrade pip
-pip install numpy==2.4.6 scipy==1.17.1 mpi4py==4.1.2 pennylane==0.45.0 pennylane-lightning==0.45.0 torch torchvision
+# Install additional packages into the venv inside the container
+singularity exec $SINGULARITY_CONTAINER \
+    bash -c "source $MYSCRATCH/Partial-Error-Correction-on-Non-Clifford-Gates/.partial_qec_venv/bin/activate \
+    && pip install pennylane==0.38.0"
+
+echo "Setup complete. Verify with:"
+echo "singularity exec \$SINGULARITY_CONTAINER bash -c 'source $MYSCRATCH/Partial-Error-Correction-on-Non-Clifford-Gates/.partial_qec_venv/bin/activate && python3 -c \"import pennylane; print(pennylane.__version__)\"'"

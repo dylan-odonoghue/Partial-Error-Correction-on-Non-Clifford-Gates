@@ -56,10 +56,10 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, test_size=200, n
     Function to run the Hybrid Quantum-Classical model. This function is called by the main script.
     """
     divide_by = 1 if 'divide_by' not in kwargs else kwargs['divide_by']  # Use a smaller subset of the dataset for quicker training
-
+    rank = 0 if 'rank' not in kwargs else kwargs['rank']  # Default rank is 0 for serial execution
     # Check CUDA availability
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+    print(f"Using device: {device}") if rank == 0 else None
 
     # Use DataLoader to create batches
     train_dataset, test_dataset = preprocess_MNIST_data(num_qubits, batch_size=batch_size, test_size=test_size, divide_by=divide_by)
@@ -69,14 +69,14 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, test_size=200, n
     
     if noise_model is not None:
         dev=qml.device("default.mixed", wires=num_qubits)
-        print("Using default.mixed device.", flush=True)
+        print("Using default.mixed device.", flush=True) if rank == 0 else None
     else:
         try:
             dev=qml.device("lightning.gpu", wires=num_qubits)
-            print("Using Lightning GPU device.", flush=True)
+            print("Using Lightning GPU device.", flush=True) if rank == 0 else None
         except:
             dev=qml.device("default.qubit", wires=num_qubits)
-            print("Using default.qubit device.", flush=True)
+            print("Using default.qubit device.", flush=True) if rank == 0 else None
     weight_shapes = {"weights": (layers, num_qubits, 3)}  # 3 parameters per qubit for RZ, RY, RZ rotations
 
     # Define model, loss function, and optimizer
