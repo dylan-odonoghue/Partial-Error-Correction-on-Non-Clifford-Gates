@@ -1,5 +1,5 @@
 # Partial Error Correction on Non-Clifford Gates
-This project extends work in partial error correction and analyses the effect of noise on the performance and trainability of quantum machine learning models. The quantum side is ran using Pennylane, with Pytorch for training.
+This project extends work in partial error correction and analyses the effect of noise on the performance and trainability of quantum machine learning models. The quantum side is ran using Pennylane, with PyTorch for training.
 
 ## File Structure
 ```

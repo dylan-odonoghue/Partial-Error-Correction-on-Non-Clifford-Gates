@@ -6,7 +6,6 @@ from noise_models import depolarising_single_qubit, depolarising_two_qubit
 import pickle
 from torchvision import transforms
 import torchvision
-import torch.distributed as dist
 from mpi4py import MPI
 
 """
@@ -150,7 +149,7 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, test_size=200, n
         print(f"Epoch {epoch+1}/{n_epochs} | "
               f"acc {accuracy:.2%} | "
               f"samples seen {trained_samples}")
-    with open(f"results/test_{num_qubits}_qubits.pkl", "wb") as f:
+    with open(f"results/test_{num_qubits}_qubits_{rank}_.pkl", "wb") as f:
         pickle.dump(results, f, protocol=pickle.HIGHEST_PROTOCOL)
     return
 
@@ -158,7 +157,6 @@ def parallel_job(rank, size, num_qubits, layers=2, n_epochs=5, batch_size=50, te
     """
     Function to run the Hybrid Quantum-Classical model in parallel. This function is called by the main script.
     """
-    dist.init_process_group(backend='nccl', rank=rank, world_size=size, init_method='env://')
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.cuda.set_device(rank)
@@ -263,7 +261,10 @@ def parallel_job(rank, size, num_qubits, layers=2, n_epochs=5, batch_size=50, te
 
 if __name__ == "__main__":
     # Example usage of the serial job function
-    noise_model = depolarising_single_qubit(p_depol=0.01, p_damping=0.001)
-    rank = MPI.COMM_WORLD.Get_rank()
-    size = MPI.COMM_WORLD.Get_size()
-    parallel_job(rank, size, 6, noise_model=noise_model, num_shots=10, divide_by=10)  # Example: run the job with 6 qubits and 10 shots
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    depol_values = [0.00, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.10]  # Example depolarising probabilities
+    p = depol_values[rank % len(depol_values)]  # Assign a depolarising probability based on rank
+    noise_model = depolarising_single_qubit(p_depol=p, p_damping=0.001)
+    serial_job(rank, size, 6, noise_model=noise_model, num_shots=10, divide_by=10)  # Example: run the job with 6 qubits and 10 shots
