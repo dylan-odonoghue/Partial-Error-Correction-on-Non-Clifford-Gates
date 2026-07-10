@@ -12,7 +12,7 @@ p_values = [0, 1.00e-5, 3.48e-5, 1.21e-4, 4.22e-4, 1.47e-3, 1.99e-3, 5.11e-3]  #
 p = p_values[task_id]
 
 # Build noise model (None for noise-free baseline)
-noise_model = None if p == 0 else depolarising_single_qubit(p)
+noise_model = None if p == 0 else noise_models.depolarising_single_qubit(p)
 
 print(f"Task {task_id}: p = {p}")
 
