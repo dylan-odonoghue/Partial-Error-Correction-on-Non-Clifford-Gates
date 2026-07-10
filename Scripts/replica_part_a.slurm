@@ -24,7 +24,7 @@ cd $NEWSCRATCH
 
 # Define the script to run
 export PYTHON_SCRIPT_DIR=${NEWSCRATCH}/Scripts
-export PYTHONSCRIPT=${PYTHON_SCRIPT_DIR}/main.py
+export PYTHON_SCRIPT=${PYTHON_SCRIPT_DIR}/main.py
 
 #----
 # Additional Settings needed for this Pytorch script:
