@@ -15,12 +15,12 @@ echo "Using container: $SINGULARITY_CONTAINER"
 # --system-site-packages inherits PyTorch and other container packages
 singularity exec $SINGULARITY_CONTAINER \
     python3 -m venv --system-site-packages \
-    $MYSCRATCH/Partial-Error-Correction-on-Non-Clifford-Gates/.partial_qec_venv
+    /scratch/pawsey1116/dodonoghue/Partial-Error-Correction-on-Non-Clifford-Gates/.partial_qec_venv
 
 # Install additional packages into the venv inside the container
 singularity exec $SINGULARITY_CONTAINER \
-    bash -c "source $MYSCRATCH/Partial-Error-Correction-on-Non-Clifford-Gates/.partial_qec_venv/bin/activate \
+    bash -c "source /scratch/pawsey1116/dodonoghue/Partial-Error-Correction-on-Non-Clifford-Gates/.partial_qec_venv/bin/activate \
     && pip install pennylane==0.38.0"
 
 echo "Setup complete. Verify with:"
-echo "singularity exec \$SINGULARITY_CONTAINER bash -c 'source $MYSCRATCH/Partial-Error-Correction-on-Non-Clifford-Gates/.partial_qec_venv/bin/activate && python3 -c \"import pennylane; print(pennylane.__version__)\"'"
+echo "singularity exec \$SINGULARITY_CONTAINER bash -c 'source /scratch/pawsey1116/dodonoghue/Partial-Error-Correction-on-Non-Clifford-Gates/.partial_qec_venv/bin/activate && python3 -c \"import pennylane; print(pennylane.__version__)\"'"
