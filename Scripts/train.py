@@ -1,7 +1,7 @@
 import pennylane as qml
 from pennylane import numpy as np
 import torch
-import torch.ditributed as dist
+import torch.distributed as dist
 from qvc_model import HybridModel
 from noise_models import depolarising_single_qubit, depolarising_two_qubit
 import pickle

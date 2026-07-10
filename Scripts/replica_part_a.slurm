@@ -6,7 +6,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --time=24:00:00
-#SBATCH --array=0-9
+#SBATCH --array=0-7
 #SBATCH --output=logs/job_%A_%a.out
 #SBATCH --error=logs/job_%A_%a.err
 
@@ -19,8 +19,8 @@ export NEWSCRATCH=/scratch/pawsey1116/dodonoghue/Partial-Error-Correction-on-Non
 export MYENV=.partial_qec_venv
 export VENV_PATH=${NEWSCRATCH}/${MYENV}
 
-# Move to project directory
-cd $NEWSCRATCH
+# Move to scripts directory
+cd $NEWSCRATCH/Scripts
 
 # Define the script to run
 export PYTHON_SCRIPT_DIR=${NEWSCRATCH}/Scripts
