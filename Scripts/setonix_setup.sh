@@ -20,7 +20,7 @@ singularity exec $SINGULARITY_CONTAINER \
 # Install additional packages into the venv inside the container
 singularity exec $SINGULARITY_CONTAINER \
     bash -c "source /scratch/pawsey1116/dodonoghue/Partial-Error-Correction-on-Non-Clifford-Gates/.partial_qec_venv/bin/activate \
-    && pip install pennylane==0.38.0"
+    && pip install autoray==0.6.11 pennylane==0.38.0"
 
 echo "Setup complete. Verify with:"
 echo "singularity exec \$SINGULARITY_CONTAINER bash -c 'source /scratch/pawsey1116/dodonoghue/Partial-Error-Correction-on-Non-Clifford-Gates/.partial_qec_venv/bin/activate && python3 -c \"import pennylane; print(pennylane.__version__)\"'"
