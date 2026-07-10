@@ -4,7 +4,7 @@
 #SBATCH --partition=work
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=64
 #SBATCH --time=24:00:00
 #SBATCH --array=0-7
 #SBATCH --output=logs/job_%A_%a.out

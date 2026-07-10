@@ -154,7 +154,7 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, test_size=200, n
         print(f"Epoch {epoch+1}/{n_epochs} | "
               f"acc {results['accuracies'][trained_samples]:.2%} | "
               f"samples seen {trained_samples}")
-    with open(f"results/{name}.pkl", "wb") as f:
+    with open(f"../results/{name}.pkl", "wb") as f:
         pickle.dump(results, f, protocol=pickle.HIGHEST_PROTOCOL)
     return
 
@@ -257,7 +257,7 @@ def parallel_job(rank, size, num_qubits, layers=2, n_epochs=5, batch_size=50, te
             print(f"Epoch {epoch+1}/{n_epochs} | "
                   f"acc {accuracy:.2f}% | "
                   f"samples seen {trained_samples}")
-        with open(f"results/test_{num_qubits}_qubits_rank_{rank}.pkl", "wb") as f:
+        with open(f"../results/test_{num_qubits}_qubits_rank_{rank}.pkl", "wb") as f:
             pickle.dump(results, f, protocol=pickle.HIGHEST_PROTOCOL)
     return
 

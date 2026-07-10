@@ -9,3 +9,5 @@
 
 # Experimental scripts
 torch_parallel_run.slurm
+
+results/
