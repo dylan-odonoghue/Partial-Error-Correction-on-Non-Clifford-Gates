@@ -71,7 +71,7 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, test_size=200, n
     train_dataset, test_dataset = preprocess_MNIST_data(num_qubits, batch_size=batch_size, test_size=test_size, divide_by=divide_by)
     # Use DataLoader to create batches
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=test_size, shuffle=False)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     
     if noise_model is not None:
         dev=qml.device("default.mixed", wires=num_qubits)
@@ -113,7 +113,7 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, test_size=200, n
 
             # NaN guard 
             if torch.isnan(loss):
-                print(f"NaN loss encountered at {trained_samples} samples, skipping batch")
+                print(f"NaN loss encountered at {trained_samples} samples, skipping batch", flush=True) if rank == 0 else None
                 continue
 
             # Backward pass
@@ -153,7 +153,7 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, test_size=200, n
 
         print(f"Epoch {epoch+1}/{n_epochs} | "
               f"acc {results['accuracies'][trained_samples]:.2%} | "
-              f"samples seen {trained_samples}")
+              f"samples seen {trained_samples}", flush=True) if rank == 0 else None
     with open(f"../results/{name}.pkl", "wb") as f:
         pickle.dump(results, f, protocol=pickle.HIGHEST_PROTOCOL)
     return
@@ -173,7 +173,7 @@ def parallel_job(rank, size, num_qubits, layers=2, n_epochs=5, batch_size=50, te
     train_dataset, test_dataset = preprocess_MNIST_data(num_qubits, batch_size=batch_size, test_size=test_size)
     train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, num_replicas=size, rank=rank)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, sampler=train_sampler)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=test_size, shuffle=False)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     # Set up the quantum device based on the noise model
     if noise_model is not None:
@@ -219,7 +219,7 @@ def parallel_job(rank, size, num_qubits, layers=2, n_epochs=5, batch_size=50, te
 
             # NaN guard 
             if torch.isnan(loss):
-                print(f"NaN loss encountered at {trained_samples} samples, skipping batch") if rank == 0 else None
+                print(f"NaN loss encountered at {trained_samples} samples, skipping batch", flush=True) if rank == 0 else None
                 continue
 
             # Backward pass
@@ -256,7 +256,7 @@ def parallel_job(rank, size, num_qubits, layers=2, n_epochs=5, batch_size=50, te
         if rank == 0:
             print(f"Epoch {epoch+1}/{n_epochs} | "
                   f"acc {accuracy:.2f}% | "
-                  f"samples seen {trained_samples}")
+                  f"samples seen {trained_samples}", flush=True) 
         with open(f"../results/test_{num_qubits}_qubits_rank_{rank}.pkl", "wb") as f:
             pickle.dump(results, f, protocol=pickle.HIGHEST_PROTOCOL)
     return

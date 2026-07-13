@@ -14,7 +14,7 @@ p = p_values[task_id]
 # Build noise model (None for noise-free baseline)
 noise_model = None if p == 0 else noise_models.depolarising_single_qubit(p)
 
-print(f"Task {task_id}: p = {p}")
+print(f"Task {task_id}: p = {p}", flush=True)
 
 # Run
 serial_job(
@@ -25,5 +25,6 @@ serial_job(
     test_size=250,
     noise_model=noise_model,
     num_shots=10000,
+    divide_by=100,
     name=f"replicarun_6_qubits_{p:.2e}_depolarising_noise"
 )
