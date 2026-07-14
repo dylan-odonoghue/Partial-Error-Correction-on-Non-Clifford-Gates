@@ -64,7 +64,7 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, test_size=200, n
         name = kwargs['name']
     # Check CUDA availability
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}") if rank == 0 else None
+    print(f"Using device: {device}", flush=True) if rank == 0 else None
 
     # Use DataLoader to create batches
     train_dataset, test_dataset = preprocess_MNIST_data(num_qubits, batch_size=batch_size, test_size=test_size, divide_by=divide_by)

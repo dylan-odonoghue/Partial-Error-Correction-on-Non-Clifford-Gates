@@ -113,7 +113,7 @@ class HybridModel(nn.Module):
             The output of the classical neural network after processing the quantum circuit's output.
         """
         # Pass the input through the quantum circuit
-        quantum_output = self.quantum(x)
+        quantum_output = self.quantum(x).to(self.device)
         
         # Apply shot noise
         output = self.shot_noise(quantum_output)
