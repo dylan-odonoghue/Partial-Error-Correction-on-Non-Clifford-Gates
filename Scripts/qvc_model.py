@@ -116,10 +116,10 @@ class HybridModel(nn.Module):
         quantum_output = self.quantum(x).to(self.device)
         
         # Apply shot noise
-        output = self.shot_noise(quantum_output)
+        output = self.shot_noise(quantum_output).to(self.device)
         
         # Pass the quantum output through the classical neural network
-        output = self.classical(output)
+        output = self.classical(output).to(self.device)
         
         return output
 
