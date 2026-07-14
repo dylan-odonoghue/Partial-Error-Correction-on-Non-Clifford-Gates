@@ -7,7 +7,6 @@ from noise_models import depolarising_single_qubit, depolarising_two_qubit
 import pickle
 from torchvision import transforms
 import torchvision
-from mpi4py import MPI
 
 """
 Training loop for the QVC.
@@ -267,10 +266,5 @@ def parallel_job(rank, size, num_qubits, layers=2, n_epochs=5, batch_size=50, te
 
 if __name__ == "__main__":
     # Example usage of the serial job function
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-    size = comm.Get_size()
-    depol_values = [0.00, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.10]  # Example depolarising probabilities
-    p = depol_values[rank % len(depol_values)]  # Assign a depolarising probability based on rank
-    noise_model = depolarising_single_qubit(p_depol=p, p_damping=0.001)
-    serial_job(rank, size, 6, noise_model=noise_model, num_shots=10, divide_by=10)  # Example: run the job with 6 qubits and 10 shots
+    noise_model = None
+    serial_job(6, noise_model=noise_model, num_shots=10, divide_by=100)  # Example: run the job with 6 qubits and 10 shots

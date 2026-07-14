@@ -1,6 +1,6 @@
 #!/bin/bash -l
 #SBATCH --job-name=partial_qec
-#SBATCH --account=pawsey1116
+#SBATCH --account=pawsey1116-q
 #SBATCH --partition=work
 #SBATCH --nodes=1
 #SBATCH --ntasks=1

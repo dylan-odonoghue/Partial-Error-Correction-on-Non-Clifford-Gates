@@ -6,7 +6,7 @@ import pennylane as qml
 from superop import SuperOpTools
 from scipy.linalg import expm, logm
 
-def depolarising_single_qubit(p_depol: float, p_damping: float = 0):
+def depolarising_single_qubit(p_depol: float, p_damping: float = 0) -> qml.NoiseModel:
     """
     Returns a depolarising noise model for RY gates with depolarising strength p.
     Also adds amplitude damping noise with strength amplitude_damping.
@@ -25,7 +25,7 @@ def depolarising_single_qubit(p_depol: float, p_damping: float = 0):
     
     return qml.NoiseModel({qml.noise.op_eq(qml.RY): depol_and_damping})
 
-def depolarising_two_qubit(p: float, num_qubits: int, phi: dict[str, float] = None):
+def depolarising_two_qubit(p: float, num_qubits: int, phi: dict[str, float] = None) -> qml.NoiseModel:
     """Returns a depolarising noise model for CZ gates with depolarising strength p."""
 
     theta = list(phi.values()) if phi is not None else [0.0] * 15
