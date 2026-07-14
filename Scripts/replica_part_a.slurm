@@ -1,23 +1,23 @@
 #!/bin/bash -l
 #SBATCH --job-name=partial_qec
 #SBATCH --account=pawsey1116-q
-#SBATCH --partition=work
+#SBATCH --partition=quantum
 #SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=64
-#SBATCH --time=24:00:00
+#SBATCH --gres=gpu:1
+#SBATCH --time=2:00:00
 #SBATCH --array=0-7
 #SBATCH --output=logs/job_%A_%a.out
 #SBATCH --error=logs/job_%A_%a.err
 
 # Load necessary modules
-module load pytorch/2.7.1-rocm6.3.3
-export TMPDIR=/tmp/${USER}-${SLURM_JOB_ID}
-mkdir -p $TMPDIR results logs
+module purge
+module load pawsey pawseytools pawseyenv PrgEnv-nvidia craype-arm-grace
+module load gcc-native-mixed/12.3
+module load pawseyenv
+export MODULEPATH=$MODULEPATH:$LMOD_CUSTOM_COMPILER_GNU_12_0_PREFIX
+module load pawsey
 
 export NEWSCRATCH=/scratch/pawsey1116/dodonoghue/Partial-Error-Correction-on-Non-Clifford-Gates
-export MYENV=.partial_qec_venv
-export VENV_PATH=${NEWSCRATCH}/${MYENV}
 
 # Move to scripts directory
 cd $NEWSCRATCH/Scripts
@@ -25,14 +25,6 @@ cd $NEWSCRATCH/Scripts
 # Define the script to run
 export PYTHON_SCRIPT_DIR=${NEWSCRATCH}/Scripts
 export PYTHON_SCRIPT=${PYTHON_SCRIPT_DIR}/main.py
-
-#----
-# Additional Settings needed for this Pytorch script:
-export MIOPEN_USER_DB_PATH="${TMPDIR}/miopen"
-export MIOPEN_CUSTOM_CACHE_DIR="${TMPDIR}/miopen_cache"
-mkdir -p $MIOPEN_USER_DB_PATH $MIOPEN_CUSTOM_CACHE_DIR
-export RDZV_PORT=29500
-export RDZV_HOST=$(hostname)
 
 # Set MPI related environment variables. (Not all need to be set)
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
@@ -45,13 +37,8 @@ echo -e "\n\n#------------------------#"
 echo "Code execution:"
 
 srun -N ${SLURM_JOB_NUM_NODES} -n ${SLURM_NTASKS} -c ${OMP_NUM_THREADS} -m block:block:block \
- singularity exec ${SINGULARITY_CONTAINER} \
  bash -c "source ${VENV_PATH}/bin/activate && \
- python3 ${PYTHON_SCRIPT}"
-
-#----
-# Remove any potentially leftover /tmp directories from this job
-rm -rf ${TMPDIR}
+ python ${PYTHON_SCRIPT}"
 #----
 #Printing information of finished job steps:
 echo -e "\n\n#------------------------#"

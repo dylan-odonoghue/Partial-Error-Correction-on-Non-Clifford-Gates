@@ -103,7 +103,7 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, test_size=200, n
     model.train()
     for epoch in range(n_epochs):
         
-        for inputs, labels in train_loader.:
+        for inputs, labels in train_loader:
             inputs, labels = inputs.to(device), labels.to(device)
             # Forward pass
             optimizer.zero_grad()
