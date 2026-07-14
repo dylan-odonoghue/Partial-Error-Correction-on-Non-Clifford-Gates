@@ -36,7 +36,7 @@ export MPICH_OFI_VERBOSE=1
 echo -e "\n\n#------------------------#"
 echo "Code execution:"
 
-srun -N ${SLURM_JOB_NUM_NODES} -n ${SLURM_NTASKS} -c ${OMP_NUM_THREADS} -m block:block:block \
+srun -N ${SLURM_JOB_NUM_NODES} -n ${SLURM_NTASKS} --gres=gpu:1 -m block:block:block \
  bash -c "source ${VENV_PATH}/bin/activate && \
  python ${PYTHON_SCRIPT}"
 #----
