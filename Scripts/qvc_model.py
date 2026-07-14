@@ -51,14 +51,14 @@ class HybridModel(nn.Module):
     """
 
     def __init__(
-        self, dev, device: torch.device, num_qubits: int, weight_shapes: dict[str, tuple], noise_model: Union[qml.NoiseModel, None] = None, num_shots: int = 100, **kwargs):
+        self, dev, device: torch.device, num_qubits: int, weight_shapes: dict[str, tuple], noise_model: Union[qml.NoiseModel, None] = None, **kwargs):
         super().__init__()
         self.dev = dev
         self.device = device
         self.num_qubits = num_qubits
         self.weight_shapes = weight_shapes
         self.kwargs = kwargs
-        self.shot_noise = ShotNoise(num_shots=num_shots, device=device)
+        self.shot_noise = ShotNoise(num_shots=kwargs.get('num_shots', 10000), device=device)
         self.noise_model = noise_model
         self.classical = nn.Linear(num_qubits, 10)
 
@@ -102,7 +102,7 @@ class HybridModel(nn.Module):
 
         self.quantum_circuit = quantum_circuit
         quantum_circuit_to_wrap = qml.add_noise(quantum_circuit, self.noise_model) if self.noise_model is not None else quantum_circuit
-        self.quantum = qml.qnn.TorchLayer(quantum_circuit_to_wrap, self.weight_shapes)
+        self.quantum = qml.qnn.TorchLayer(quantum_circuit_to_wrap, self.weight_shapes) # pyright: ignore[reportCallIssue]
 
     def forward(self, x):
         """

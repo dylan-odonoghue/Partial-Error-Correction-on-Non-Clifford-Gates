@@ -30,7 +30,7 @@ def preprocess_MNIST_data(num_qubits: int, batch_size: int = 50, divide_by: int 
         train_loader: DataLoader for the training dataset.
         test_loader: DataLoader for the testing dataset.
     """
-    im_size = int(np.sqrt(2**num_qubits))
+    im_size = int(np.sqrt(2**num_qubits)) # pyright: ignore[reportAttributeAccessIssue]
 
     # Resize images, convert to tensors
     transform = transforms.Compose([
@@ -51,7 +51,7 @@ def preprocess_MNIST_data(num_qubits: int, batch_size: int = 50, divide_by: int 
 
 
 
-def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, noise_model=None, *args, **kwargs):
+def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, noise_model=None, **kwargs):
     """
     Function to run the Hybrid Quantum-Classical model. This function is called by the main script.
     """
@@ -89,7 +89,7 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, noise_model=None
     # Define model, loss function, and optimizer
     #phi = {f"{P}{Q}": 0.0 for P in "IXYZ" for Q in "IXYZ" if not (P == "I" and Q == "I")}
     #phi["ZZ"] = 0.00116
-    model = HybridModel(dev=dev, device=device, num_qubits=num_qubits, weight_shapes=weight_shapes, num_shots=num_shots, noise_model=noise_model, **kwargs).to(device)
+    model = HybridModel(dev=dev, device=device, num_qubits=num_qubits, weight_shapes=weight_shapes, noise_model=noise_model, num_shots=num_shots, **kwargs).to(device)
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 

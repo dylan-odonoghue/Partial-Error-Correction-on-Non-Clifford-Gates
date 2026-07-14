@@ -17,7 +17,13 @@ module load pawseyenv
 export MODULEPATH=$MODULEPATH:$LMOD_CUSTOM_COMPILER_GNU_12_0_PREFIX
 module load pawsey
 
+
+
 export NEWSCRATCH=/scratch/pawsey1116/dodonoghue/Partial-Error-Correction-on-Non-Clifford-Gates
+
+# Activate the virtual environment
+VENV_PATH=${NEWSCRATCH}/.partial_qec_venv
+source ${VENV_PATH}/bin/activate
 
 # Move to scripts directory
 cd $NEWSCRATCH/Scripts
@@ -37,8 +43,7 @@ echo -e "\n\n#------------------------#"
 echo "Code execution:"
 
 srun -N ${SLURM_JOB_NUM_NODES} -n ${SLURM_NTASKS} --gres=gpu:1 -m block:block:block \
- bash -c "source ${VENV_PATH}/bin/activate && \
- python ${PYTHON_SCRIPT}"
+ python ${PYTHON_SCRIPT}
 #----
 #Printing information of finished job steps:
 echo -e "\n\n#------------------------#"
