@@ -1,5 +1,6 @@
 # Virtual environment
 .venv
+.partial_qec_venv
 # MNIST dataset
 data/
 Scripts/data/
@@ -14,3 +15,5 @@ torch_parallel_run.slurm
 results/
 
 .cache/
+
+**/setonix_setup.sh

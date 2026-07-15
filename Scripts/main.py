@@ -13,7 +13,7 @@ parser.add_argument("-e", "--n_epochs", type=int, default=1, help="Number of tra
 parser.add_argument("-b", "--batch_size", type=int, default=50, help="Batch size for training.")
 parser.add_argument("-p", "--p", type=float, default = 0, help="Depolarising noise probability.")
 parser.add_argument("-d", "--divide_by", type=int, default=100, help="Divide the size of the dataset by this value.")
-parser.add_argument("-a", "--array", type=bool, action="store_true", help="Boolean flag to indicate if the script is running as part of a SLURM array job.")
+parser.add_argument("-a", "--array", action="store_true", help="Boolean flag to indicate if the script is running as part of a SLURM array job.")
 
 args = parser.parse_args()
 
