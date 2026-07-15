@@ -30,7 +30,7 @@ def preprocess_MNIST_data(num_qubits: int, batch_size: int = 50, divide_by: int 
         train_loader: DataLoader for the training dataset.
         test_loader: DataLoader for the testing dataset.
     """
-    im_size = int(np.sqrt(2**num_qubits)) # pyright: ignore[reportAttributeAccessIssue]
+    im_size = round(np.sqrt(2**num_qubits)) # pyright: ignore[reportAttributeAccessIssue]
 
     # Resize images, convert to tensors
     transform = transforms.Compose([
@@ -120,6 +120,7 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, noise_model=None
             # Backward pass
             loss.backward()
             optimizer.step()
+            torch.cuda.empty_cache()
 
             # Logging 
             trained_samples += len(inputs)

@@ -12,3 +12,5 @@ Scripts/data/
 torch_parallel_run.slurm
 
 results/
+
+.cache/

@@ -4,7 +4,7 @@
 #SBATCH --partition=quantum
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:1
-#SBATCH --time=2:00:00
+#SBATCH --time=12:00:00
 #SBATCH --array=0-7
 #SBATCH --output=logs/job_%A_%a.out
 #SBATCH --error=logs/job_%A_%a.err
@@ -33,17 +33,21 @@ export PYTHON_SCRIPT_DIR=${NEWSCRATCH}/Scripts
 export PYTHON_SCRIPT=${PYTHON_SCRIPT_DIR}/main.py
 
 # Set MPI related environment variables. (Not all need to be set)
-export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 export OMP_PLACES=cores
 export OMP_PROC_BIND=close
 export MPICH_OFI_STARTUP_CONNECT=1
 export MPICH_OFI_VERBOSE=1
 
+# Set torch-related environment variables
+export PYTORCH_KERNEL_CACHE_PATH=$NEWSCRATCH/.cache/torch/kernels
+mkdir -p $PYTORCH_KERNEL_CACHE_PATH
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
 echo -e "\n\n#------------------------#"
 echo "Code execution:"
 
 srun -N ${SLURM_JOB_NUM_NODES} -n ${SLURM_NTASKS} --gres=gpu:1 -m block:block:block \
- python ${PYTHON_SCRIPT}
+ python ${PYTHON_SCRIPT} -n 10 -l 50 -e 100 -b 1 -d 100 --array
 #----
 #Printing information of finished job steps:
 echo -e "\n\n#------------------------#"
