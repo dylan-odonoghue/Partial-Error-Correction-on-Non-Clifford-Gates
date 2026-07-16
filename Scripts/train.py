@@ -55,7 +55,7 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, noise_model=None
     """
     Function to run the Hybrid Quantum-Classical model. This function is called by the main script.
     """
-    divide_by = 1 if 'divide_by' not in kwargs else kwargs['divide_by']  # Use a smaller subset of the dataset for quicker training
+    divide_by = 1 if 'divide_by' not in kwargs else kwargs['divide_by']  # Users can specify to use a smaller subset of the dataset for quicker training
     rank = 0 if 'rank' not in kwargs else kwargs['rank']  # Default rank is 0 for serial execution
     lr = 0.005 if 'lr' not in kwargs else kwargs['lr']  # Learning rate for the optimizer
     num_shots = 10000 if 'num_shots' not in kwargs else kwargs['num_shots']  # Number of shots for quantum measurements
@@ -163,5 +163,7 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, noise_model=None
 
 if __name__ == "__main__":
     # Example usage of the serial job function
-    noise_model = None
-    serial_job(6, noise_model=noise_model, num_shots=10, divide_by=100)  # Example: run the job with 6 qubits and 10 shots
+    phi = {f"{P}{Q}": 0.0 for P in "IXYZ" for Q in "IXYZ" if not (P == "I" and Q == "I")}
+    phi["ZZ"] = 0.00116
+    noise_model = depolarising_two_qubit(p=0.01, num_qubits=8, phi=phi)  # Example: create a noise model with depolarising strength 0.01 and ZZ crosstalk strength set to 0.00116
+    serial_job(8, noise_model=noise_model, num_shots=10, divide_by=100)  # Example: run the job with 8 qubits and 10 shots
