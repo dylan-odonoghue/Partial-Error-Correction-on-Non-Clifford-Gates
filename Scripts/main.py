@@ -9,10 +9,11 @@ import argparse
 parser = argparse.ArgumentParser(description="Run quantum neural network training with specified noise model.")
 parser.add_argument("-n", "--num_qubits", type=int, default=6, help="Number of qubits in the quantum circuit.")
 parser.add_argument("-l", "--layers", type=int, default=10, help="Number of layers in the quantum circuit.")
-parser.add_argument("-e", "--n_epochs", type=int, default=1, help="Number of training epochs.")
+parser.add_argument("-e", "--num_epochs", type=int, default=1, help="Number of training epochs.")
 parser.add_argument("-b", "--batch_size", type=int, default=50, help="Batch size for training.")
 parser.add_argument("-p", "--p", type=float, default = 0, help="Depolarising noise probability.")
-parser.add_argument("-d", "--divide_by", type=int, default=100, help="Divide the size of the dataset by this value.")
+parser.add_argument("-t", "--train_size", type=int, default=600, help="Number of training samples to use (default is 600).")
+parser.add_argument("-s", "--test_size", type=int, default=250, help="Number of testing samples to use (default is 250).")
 parser.add_argument("-a", "--array", action="store_true", help="Boolean flag to indicate if the script is running as part of a SLURM array job.")
 
 args = parser.parse_args()
@@ -53,10 +54,11 @@ print(f"p = {args.p}", flush=True)
 serial_job(
     num_qubits=args.num_qubits,
     layers=args.layers,
-    n_epochs=args.n_epochs,
+    num_epochs=args.num_epochs,
     batch_size=args.batch_size,
     noise_model=noise_model,
     num_shots=10000,
-    divide_by=args.divide_by,
+    train_size=args.train_size,
+    test_size=args.test_size,
     name_extension=name_extension if args.array else None  # Only set name_extension if running as part of an array job
 )

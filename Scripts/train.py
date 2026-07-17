@@ -19,17 +19,22 @@ Implements the ADAM optimiser setup from Kang et al.:
   - Metrics logged: loss, avg gradient^2, test accuracy (every test_every batches)
 """
 
-def preprocess_MNIST_data(num_qubits: int, batch_size: int = 50, divide_by: int = 10):
+def preprocess_MNIST_data(num_qubits: int, train_size: int = 60000, test_size: int = 10000):
     """
     Preprocess the MNIST dataset for training and testing.
     Args:
         num_qubits: Number of qubits in the quantum circuit.
-        batch_size: Batch size for training.
-        divide_by: Value to divide the dataset size by.
+        train_size: Number of training samples to use (default is 60000).
+        test_size: Number of testing samples to use (default is 10000).
     Returns:
         train_loader: DataLoader for the training dataset.
         test_loader: DataLoader for the testing dataset.
     """
+    if train_size > 60000:
+        print("WARNING: train_size should be <= 60000. Using the full dataset instead.", flush=True)
+    if test_size > 10000:
+        print("WARNING: test_size should be <= 10000. Using the full dataset instead.", flush=True)
+
     im_size = round(np.sqrt(2**num_qubits)) # pyright: ignore[reportAttributeAccessIssue]
 
     # Resize images, convert to tensors
@@ -41,29 +46,32 @@ def preprocess_MNIST_data(num_qubits: int, batch_size: int = 50, divide_by: int 
     ])
 
     # Load MNIST dataset
-    train_dataset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
-    test_dataset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
+    train_dataset = torchvision.datasets.MNIST(root='./data', train=True,  download=True, transform=transform)
+    test_dataset  = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
 
-    train_dataset = torch.utils.data.Subset(train_dataset, indices=range(0, len(train_dataset), divide_by))
-    test_dataset = torch.utils.data.Subset(test_dataset, indices=range(0, len(test_dataset), divide_by))
+    train_dataset = torch.utils.data.Subset(train_dataset, indices=range(0, min(train_size, len(train_dataset))))
+    test_dataset  = torch.utils.data.Subset(test_dataset,  indices=range(0, min(test_size,  len(test_dataset))))
 
     return train_dataset, test_dataset
 
 
 
-def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, noise_model=None, **kwargs):
+def serial_job(num_qubits: int, layers: int = 2, num_epochs: int = 5, batch_size: int = 50, noise_model=None, **kwargs):
     """
     Function to run the Hybrid Quantum-Classical model. This function is called by the main script.
     """
-    divide_by = 1 if 'divide_by' not in kwargs else kwargs['divide_by']  # Users can specify to use a smaller subset of the dataset for quicker training
-    rank = 0 if 'rank' not in kwargs else kwargs['rank']  # Default rank is 0 for serial execution
-    lr = 0.005 if 'lr' not in kwargs else kwargs['lr']  # Learning rate for the optimizer
-    num_shots = 10000 if 'num_shots' not in kwargs else kwargs['num_shots']  # Number of shots for quantum measurements
+    rank             = kwargs.pop('rank', 0)  # Default rank is 0 for serial execution
+    lr               = kwargs.pop('lr', 0.005)  # Learning rate for the optimizer
+    num_shots        = kwargs.pop('num_shots', 10000)  # Number of shots for quantum measurements
+    train_size       = kwargs.pop('train_size', 60000)  # Number of training samples
+    test_size        = kwargs.pop('test_size', 10000)  # Number of testing samples
+    name_extension   = kwargs.pop('name_extension', "")  # Optional name extension for logging
     noise_model_name = get_noise_model_name(noise_model)  # Name of the noise model for logging
-    name_extension = "" if 'name_extension' not in kwargs else f"_{kwargs['name_extension']}"  # Optional name extension for logging
+    
 
-    if name := kwargs.get('name') is None:
-        name = f"training_qubits_{num_qubits}_layers_{layers}_epochs_{n_epochs}_batch_{batch_size}_shots_{num_shots}_noise_{noise_model_name}_divideby_{divide_by}{name_extension}"
+
+    if name := kwargs.pop('name', None) is None:
+        name = f"training_qubits_{num_qubits}_layers_{layers}_epochs_{num_epochs}_batch_{batch_size}_shots_{num_shots}_noise_{noise_model_name}{name_extension}"
     else:
         name = kwargs['name']
     # Check CUDA availability
@@ -71,10 +79,9 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, noise_model=None
     print(f"Using device: {device}", flush=True) if rank == 0 else None
 
     # Use DataLoader to create batches
-    train_dataset, test_dataset = preprocess_MNIST_data(num_qubits, batch_size=batch_size, divide_by=divide_by)
-    # Use DataLoader to create batches
+    train_dataset, test_dataset = preprocess_MNIST_data(num_qubits, train_size=train_size, test_size=test_size)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    test_loader  = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     
     if noise_model is not None:
         dev=qml.device("default.mixed", wires=num_qubits)
@@ -89,9 +96,7 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, noise_model=None
     weight_shapes = {"weights": (layers, num_qubits, 3)}  # 3 parameters represent the Euler angles for each qubit in the layer
 
     # Define model, loss function, and optimizer
-    #phi = {f"{P}{Q}": 0.0 for P in "IXYZ" for Q in "IXYZ" if not (P == "I" and Q == "I")}
-    #phi["ZZ"] = 0.00116
-    model = HybridModel(dev=dev, device=device, num_qubits=num_qubits, weight_shapes=weight_shapes, noise_model=noise_model, **kwargs).to(device)
+    model     = HybridModel(dev=dev, device=device, num_qubits=num_qubits, weight_shapes=weight_shapes, noise_model=noise_model, **kwargs).to(device)
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
@@ -105,19 +110,15 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, noise_model=None
     trained_samples = 0
     
     model.train()
-    for epoch in range(n_epochs):
+    for epoch in range(num_epochs):
         
         for inputs, labels in train_loader:
             inputs, labels = inputs.to(device), labels.to(device)
+
             # Forward pass
             optimizer.zero_grad()
             outputs = model(inputs)
             loss = criterion(outputs, labels)
-
-            # NaN guard 
-            if torch.isnan(loss):
-                print(f"NaN loss encountered at {trained_samples} samples, skipping batch", flush=True) if rank == 0 else None
-                continue
 
             # Backward pass
             loss.backward()
@@ -137,8 +138,11 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, noise_model=None
             else:
                 results["gradients"].append(float("nan"))
 
-            #print(f"  samples {trained_samples:>6} | loss {loss.item():.4f} | "
-            #      f"grad² {results['gradients'][-1]:.2e}")
+            if trained_samples % (batch_size * 10) == 0:  # Log every 10 batches
+                print(f"Samples seen {trained_samples:<6}",
+                  f"loss {results['loss_values'][-1]:.4f} ",
+                  f"grad² {results['gradients'][-1]:.2e} "
+                  , sep="| ", flush=True) if rank == 0 else None
 
         # Test evaluation after each epoch
         model.eval()
@@ -155,17 +159,15 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, noise_model=None
 
         results["accuracies"][trained_samples] = correct / total
         model.train()
-
-        print(f"Epoch {epoch+1}/{n_epochs} | "
-              f"acc {results['accuracies'][trained_samples]:.2%} | "
-              f"samples seen {trained_samples}", flush=True) if rank == 0 else None
-    with open(f"../results/{name}.pkl", "wb") as f:
-        pickle.dump(results, f, protocol=pickle.HIGHEST_PROTOCOL)
+    if kwargs.get('save_results', True):
+        with open(f"../results/{name}.pkl", "wb") as f:
+            pickle.dump(results, f, protocol=pickle.HIGHEST_PROTOCOL)
     return
 
 if __name__ == "__main__":
     # Example usage of the serial job function
     phi = {f"{P}{Q}": 0.0 for P in "IXYZ" for Q in "IXYZ" if not (P == "I" and Q == "I")}
     phi["ZZ"] = 0.00116
-    noise_model = depolarising_two_qubit(p_depol=0.01, num_qubits=8, phi=phi)  # Example: create a noise model with depolarising strength 0.01 and ZZ crosstalk strength set to 0.00116
-    serial_job(8, noise_model=noise_model, num_shots=10, divide_by=100)  # Example: run the job with 8 qubits and 10 shots
+    noise_model = depolarising_two_qubit(p_depol=0.01, num_qubits=6, phi=phi)  
+    noise_model = None
+    serial_job(6, noise_model=noise_model, num_shots=10, batch_size=1, train_size=600, test_size=250, num_epochs=1, save_results=False)

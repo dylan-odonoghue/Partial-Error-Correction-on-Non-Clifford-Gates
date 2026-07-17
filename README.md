@@ -5,11 +5,9 @@ This project extends work in partial error correction and analyses the effect of
 ```
 ├── README.md
 ├── Scripts
-│   ├── data
-│   ├── job.ipynb
+│   ├── debug.ipynb
 │   ├── noise_models.py
 │   ├── qvc_model.py
-│   ├── setonix_setup.sh
 │   ├── superop.py
 │   └── train.py
 ├── result_analysis.ipynb
