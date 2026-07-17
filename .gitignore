@@ -17,3 +17,6 @@ results/
 .cache/
 
 **/setonix_setup.sh
+**/setonix_quantum_setup.sh
+**/*.slurm
+results/test_6_qubits.pkl

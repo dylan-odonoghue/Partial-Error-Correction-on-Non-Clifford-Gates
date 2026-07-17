@@ -25,7 +25,7 @@ def depolarising_single_qubit(p_depol: float, p_damping: float = 0) -> qml.Noise
     
     return qml.NoiseModel({qml.noise.op_eq(qml.RY): depol_and_damping})
 
-def depolarising_two_qubit(p: float, num_qubits: int, phi: dict[str, float]|None = None) -> qml.NoiseModel:
+def depolarising_two_qubit(p_depol: float, num_qubits: int, phi: dict[str, float]|None = None) -> qml.NoiseModel:
     """
     Returns a depolarising noise model for CZ gates with depolarising strength p.
     Also adds crosstalk noise with strength phi (a dictionary of Pauli-Pauli interaction strengths).
@@ -40,8 +40,8 @@ def depolarising_two_qubit(p: float, num_qubits: int, phi: dict[str, float]|None
         qml.QubitChannel(unitary_channel_adjoint_rep, wires=crosstalk_nearest_neighbour_wires_1)
         qml.QubitChannel(unitary_channel_adjoint_rep, wires=crosstalk_nearest_neighbour_wires_2)
     
-    depolarising_channel_kraus_reps = qml.DepolarizingChannel.compute_kraus_matrices(p)
-    two_qubit_depolarising_channel_kraus_reps = [qml.math.kron(k1, k2) for k1 in depolarising_channel_kraus_reps for k2 in depolarising_channel_kraus_reps]
+    depolarising_channel_kraus_reps = qml.DepolarizingChannel.compute_kraus_matrices(p_depol)
+    two_qubit_depolarising_channel_kraus_reps = [qml.math.kron(k1, k2) for k1 in depolarising_channel_kraus_reps for k2 in depolarising_channel_kraus_reps] # pyright: ignore[reportAttributeAccessIssue]
 
     def depolarising_noise(op, **params):
         qml.QubitChannel(two_qubit_depolarising_channel_kraus_reps, wires=op.wires)
@@ -51,3 +51,16 @@ def depolarising_two_qubit(p: float, num_qubits: int, phi: dict[str, float]|None
         qml.noise.op_eq(qml.CZ): depolarising_noise
     })
 
+def get_noise_model_name(noise_model: qml.NoiseModel|None) -> str:
+    """
+    Returns the name of the noise model for logging purposes, delimited by hyphens.
+    If noise_model is None, returns "None".
+    If noise_model is not recognized, returns "Unknown".
+    """
+    if noise_model is None:
+        return "None"
+    noise_name_dict = { # Contain the names in this dictionary.
+        f"{str(depolarising_two_qubit(p_depol=0.01, num_qubits=10, phi=None))}": "Two-qubit-noise",
+        f"{str(depolarising_single_qubit(p_depol=0.01))}": "Single-qubit-noise"
+    }
+    return noise_name_dict.get(str(noise_model), "Unknown")

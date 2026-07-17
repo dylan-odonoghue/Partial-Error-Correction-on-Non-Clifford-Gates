@@ -3,7 +3,7 @@ from pennylane import numpy as np
 import torch
 import torch.distributed as dist
 from qvc_model import HybridModel
-from noise_models import depolarising_single_qubit, depolarising_two_qubit
+from noise_models import depolarising_single_qubit, depolarising_two_qubit, get_noise_model_name
 import pickle
 from torchvision import transforms
 import torchvision
@@ -59,9 +59,11 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, noise_model=None
     rank = 0 if 'rank' not in kwargs else kwargs['rank']  # Default rank is 0 for serial execution
     lr = 0.005 if 'lr' not in kwargs else kwargs['lr']  # Learning rate for the optimizer
     num_shots = 10000 if 'num_shots' not in kwargs else kwargs['num_shots']  # Number of shots for quantum measurements
+    noise_model_name = get_noise_model_name(noise_model)  # Name of the noise model for logging
+    name_extension = "" if 'name_extension' not in kwargs else f"_{kwargs['name_extension']}"  # Optional name extension for logging
 
     if name := kwargs.get('name') is None:
-        name = f"unnamed_qubits_{num_qubits}_layers_{layers}_epochs_{n_epochs}_batch_{batch_size}_shots_{num_shots}"
+        name = f"training_qubits_{num_qubits}_layers_{layers}_epochs_{n_epochs}_batch_{batch_size}_shots_{num_shots}_noise_{noise_model_name}_divideby_{divide_by}{name_extension}"
     else:
         name = kwargs['name']
     # Check CUDA availability
@@ -84,7 +86,7 @@ def serial_job(num_qubits, layers=2, n_epochs=5, batch_size=50, noise_model=None
         except:
             dev=qml.device("default.qubit", wires=num_qubits)
             print("Using default.qubit device.", flush=True) if rank == 0 else None
-    weight_shapes = {"weights": (layers, num_qubits, 3)}  # 3 parameters per qubit for RZ, RY, RZ rotations
+    weight_shapes = {"weights": (layers, num_qubits, 3)}  # 3 parameters represent the Euler angles for each qubit in the layer
 
     # Define model, loss function, and optimizer
     #phi = {f"{P}{Q}": 0.0 for P in "IXYZ" for Q in "IXYZ" if not (P == "I" and Q == "I")}
@@ -165,5 +167,5 @@ if __name__ == "__main__":
     # Example usage of the serial job function
     phi = {f"{P}{Q}": 0.0 for P in "IXYZ" for Q in "IXYZ" if not (P == "I" and Q == "I")}
     phi["ZZ"] = 0.00116
-    noise_model = depolarising_two_qubit(p=0.01, num_qubits=8, phi=phi)  # Example: create a noise model with depolarising strength 0.01 and ZZ crosstalk strength set to 0.00116
+    noise_model = depolarising_two_qubit(p_depol=0.01, num_qubits=8, phi=phi)  # Example: create a noise model with depolarising strength 0.01 and ZZ crosstalk strength set to 0.00116
     serial_job(8, noise_model=noise_model, num_shots=10, divide_by=100)  # Example: run the job with 8 qubits and 10 shots
