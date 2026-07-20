@@ -2,7 +2,9 @@
 This module contains several noise models to pass into the HybridModel class (defined in qml_modules.py).
 """
 
+from dataclasses import dataclass
 import pennylane as qml
+import numpy as np
 from superop import SuperOpTools
 from scipy.linalg import expm, logm
 
@@ -11,9 +13,11 @@ def depolarising_single_qubit(p_depol: float, p_damping: float = 0) -> qml.Noise
     Returns a depolarising noise model for RY gates with depolarising strength p.
     Also adds amplitude damping noise with strength amplitude_damping.
     """
+    assert 0 <= p_depol <= 1, "Depolarising probability must be between 0 and 1."
+    assert 0 <= p_damping <= 1, "Amplitude damping probability must be between 0 and 1."
 
     if p_damping == 0 and p_depol >= 0:
-        return qml.NoiseModel({qml.noise.op_eq(qml.RY): qml.noise.partial_wires(qml.DepolarizingChannel, p = p_depol)})
+        return qml.NoiseModel({qml.noise.op_eq(qml.RY): qml.noise.partial_wires(qml.DepolarizingChannel, p_depol)}, name = f"depol(p={p_depol})")
     
     depol_channel_kraus_reps = qml.DepolarizingChannel.compute_kraus_matrices(p_depol)
     damping_channel_kraus_reps = qml.AmplitudeDamping.compute_kraus_matrices(p_damping)
@@ -23,15 +27,21 @@ def depolarising_single_qubit(p_depol: float, p_damping: float = 0) -> qml.Noise
     def depol_and_damping(op, **metadata):
         qml.QubitChannel(kraus_list, wires=op.wires)
     
-    return qml.NoiseModel({qml.noise.op_eq(qml.RY): depol_and_damping})
+    return qml.NoiseModel({qml.noise.op_eq(qml.RY): depol_and_damping}, name=f"depol-damp(p-depol={p_depol}, p-damp={p_damping})")
 
 def depolarising_two_qubit(p_depol: float, num_qubits: int, phi: dict[str, float]|None = None) -> qml.NoiseModel:
     """
     Returns a depolarising noise model for CZ gates with depolarising strength p.
     Also adds crosstalk noise with strength phi (a dictionary of Pauli-Pauli interaction strengths).
     """
+    assert 0 <= p_depol <= 1, "Depolarising probability must be between 0 and 1."
+
 
     theta = list(phi.values()) if phi is not None else [0.0] * 15
+
+    assert len(theta) == 15, "phi must be a dictionary with 15 values for the Pauli-Pauli interaction strengths."
+    assert all(-np.pi <= val <= np.pi for val in theta), "All values in phi must be between -pi and pi."
+
     unitary_channel_adjoint_rep = [qml.SpecialUnitary.compute_matrix(theta, num_wires=2)]
 
     def crosstalk_noise(op, **params):
@@ -46,21 +56,12 @@ def depolarising_two_qubit(p_depol: float, num_qubits: int, phi: dict[str, float
     def depolarising_noise(op, **params):
         qml.QubitChannel(two_qubit_depolarising_channel_kraus_reps, wires=op.wires)
     
+    if phi is None or all(val == 0 for val in phi.values()):
+        name = f"two-qubit-depol(p-depol={p_depol})"
+    else:
+        name = f"two-qubit-depol-crosstalk(p-depol={p_depol})"
+
     return qml.NoiseModel({
         qml.noise.op_eq(qml.CZ): crosstalk_noise,
         qml.noise.op_eq(qml.CZ): depolarising_noise
-    })
-
-def get_noise_model_name(noise_model: qml.NoiseModel|None) -> str:
-    """
-    Returns the name of the noise model for logging purposes, delimited by hyphens.
-    If noise_model is None, returns "None".
-    If noise_model is not recognized, returns "Unknown".
-    """
-    if noise_model is None:
-        return "None"
-    noise_name_dict = { # Contain the names in this dictionary.
-        f"{str(depolarising_two_qubit(p_depol=0.01, num_qubits=10, phi=None))}": "Two-qubit-noise",
-        f"{str(depolarising_single_qubit(p_depol=0.01))}": "Single-qubit-noise"
-    }
-    return noise_name_dict.get(str(noise_model), "Unknown")
+    }, name=name)

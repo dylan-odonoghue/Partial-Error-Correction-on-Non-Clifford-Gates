@@ -39,7 +39,7 @@ if args.array:
     # Ensure task_id is within the bounds of noise_configs
     if task_id < len(noise_configs):
         args.p = noise_configs[task_id]["p"] # Set the noise probability based on the SLURM array task ID
-        name_extension = f"depol-noise_{args.p:.2e}_overfitting"  # Name extension for logging
+        name_extension = f"_depol-noise_{args.p:.2e}_overfitting"  # Name extension for logging
     else:
         raise ValueError(f"SLURM_ARRAY_TASK_ID {task_id} is out of bounds for the defined noise configurations.")
     

@@ -3,7 +3,7 @@ from pennylane import numpy as np
 import torch
 import torch.distributed as dist
 from qvc_model import HybridModel
-from noise_models import depolarising_single_qubit, depolarising_two_qubit, get_noise_model_name
+from noise_models import depolarising_single_qubit, depolarising_two_qubit
 import pickle
 from torchvision import transforms
 import torchvision
@@ -66,8 +66,8 @@ def serial_job(num_qubits: int, layers: int = 2, num_epochs: int = 5, batch_size
     train_size       = kwargs.pop('train_size', 60000)  # Number of training samples
     test_size        = kwargs.pop('test_size', 10000)  # Number of testing samples
     name_extension   = kwargs.pop('name_extension', "")  # Optional name extension for logging
-    noise_model_name = get_noise_model_name(noise_model)  # Name of the noise model for logging
-    
+    noise_model_name = noise_model.metadata['name'] if noise_model is not None else "none"  # Name of the noise model for logging
+
 
 
     if name := kwargs.pop('name', None) is None:
