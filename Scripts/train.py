@@ -7,6 +7,7 @@ from noise_models import depolarising_single_qubit, depolarising_two_qubit
 import pickle
 from torchvision import transforms
 import torchvision
+import random
 
 """
 Training loop for the QVC.
@@ -19,13 +20,14 @@ Implements the ADAM optimiser setup from Kang et al.:
   - Metrics logged: loss, avg gradient^2, test accuracy (every test_every batches)
 """
 
-def preprocess_MNIST_data(num_qubits: int, train_size: int = 60000, test_size: int = 10000):
+def preprocess_MNIST_data(num_qubits: int, train_size: int = 60000, test_size: int = 10000, random_seed: int = 42):
     """
     Preprocess the MNIST dataset for training and testing.
     Args:
         num_qubits: Number of qubits in the quantum circuit.
         train_size: Number of training samples to use (default is 60000).
         test_size: Number of testing samples to use (default is 10000).
+        random_seed: Seed for random number generation.
     Returns:
         train_loader: DataLoader for the training dataset.
         test_loader: DataLoader for the testing dataset.
@@ -49,8 +51,13 @@ def preprocess_MNIST_data(num_qubits: int, train_size: int = 60000, test_size: i
     train_dataset = torchvision.datasets.MNIST(root='./data', train=True,  download=True, transform=transform)
     test_dataset  = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
 
-    train_dataset = torch.utils.data.Subset(train_dataset, indices=range(0, min(train_size, len(train_dataset))))
-    test_dataset  = torch.utils.data.Subset(test_dataset,  indices=range(0, min(test_size,  len(test_dataset))))
+    # Randomly select a subset of the dataset based on train_size and test_size
+    random.seed(random_seed)
+    train_indices = random.sample(range(len(train_dataset)), min(train_size, len(train_dataset)))
+    test_indices  = random.sample(range(len(test_dataset)),  min(test_size,  len(test_dataset)))
+
+    train_dataset = torch.utils.data.Subset(train_dataset, indices=train_indices)
+    test_dataset  = torch.utils.data.Subset(test_dataset,  indices=test_indices)
 
     return train_dataset, test_dataset
 
