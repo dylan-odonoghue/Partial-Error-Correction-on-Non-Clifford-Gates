@@ -1,3 +1,9 @@
+"""
+Training loop for the QVC.
+
+Loads the MNIST dataset, preprocesses it, and trains a hybrid quantum-classical model using PennyLane and PyTorch. The training results, including loss values, gradients, and accuracies, are saved to a pickle file for later analysis.
+"""
+
 import pennylane as qml
 from pennylane import numpy as np
 import torch
@@ -9,20 +15,11 @@ from torchvision import transforms
 import torchvision
 import random
 
-"""
-Training loop for the QVC.
-
-Implements the ADAM optimiser setup from Kang et al.:
-  - Learning rate: 0.005
-  - Batch size: 50 images
-  - Loss: cross-entropy with softmax activation on Pauli-Z expectation values
-  - Gradient: adjoint differentiation (via PennyLane)
-  - Metrics logged: loss, avg gradient^2, test accuracy (every test_every batches)
-"""
 
 def preprocess_MNIST_data(num_qubits: int, train_size: int = 60000, test_size: int = 10000, random_seed: int = 42):
     """
     Preprocess the MNIST dataset for training and testing.
+
     Args:
         num_qubits: Number of qubits in the quantum circuit.
         train_size: Number of training samples to use (default is 60000).
@@ -65,7 +62,17 @@ def preprocess_MNIST_data(num_qubits: int, train_size: int = 60000, test_size: i
 
 def serial_job(num_qubits: int, layers: int = 2, num_epochs: int = 5, batch_size: int = 50, noise_model=None, **kwargs):
     """
-    Function to run the Hybrid Quantum-Classical model. This function is called by the main script.
+    Function to run the Hybrid Quantum-Classical model. This function is called by the `main.py` script.
+    
+    Training data is saved to a pickle file in the `../results/` directory with a name that encodes the training parameters and noise model used.
+    Args:
+        num_qubits: Number of qubits in the quantum circuit.
+        layers: Number of layers in the quantum circuit.
+        num_epochs: Number of training epochs.
+        batch_size: Batch size for training.
+        noise_model: Noise model to apply during training (default is None for noise-free).
+    Returns:
+        None. Training results are saved to a pickle file.
     """
     rank             = kwargs.pop('rank', 0)  # Default rank is 0 for serial execution
     lr               = kwargs.pop('lr', 0.005)  # Learning rate for the optimizer
@@ -150,6 +157,23 @@ def serial_job(num_qubits: int, layers: int = 2, num_epochs: int = 5, batch_size
                   f"loss {results['loss_values'][-1]:.4f} ",
                   f"grad² {results['gradients'][-1]:.2e} "
                   , sep="| ", flush=True) if rank == 0 else None
+
+            # Test evaluation after every 50 batches
+            if trained_samples % (batch_size * 50) == 0:
+                model.eval()
+                correct = 0
+                total   = 0
+
+                with torch.no_grad():
+                    for inputs, labels in test_loader:
+                        inputs, labels = inputs.to(device), labels.to(device)
+                        outputs = model(inputs)
+                        _, predicted = torch.max(outputs, dim=1)
+                        correct += (predicted == labels).sum().item()
+                        total   += labels.size(0)
+
+                results["accuracies"][trained_samples] = correct / total
+                model.train()
 
         # Test evaluation after each epoch
         model.eval()

@@ -1,3 +1,10 @@
+"""
+This script serves as a command-line entry point for training a hybrid quantum-classical model using Pennylane and PyTorch.
+
+Code for the main training loop is contained in the `serial_job` function, which is imported from the `train` module. The script allows users to specify various parameters for the training process, including the number of qubits, layers, epochs, batch size, and noise model.
+The script also supports running as part of a SLURM array job, where different noise configurations can be specified for each array index. The noise probability is determined by the SLURM_ARRAY_TASK_ID when running in this mode.
+"""
+
 import os
 import numpy as np
 import noise_models

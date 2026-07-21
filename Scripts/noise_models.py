@@ -17,7 +17,7 @@ def depolarising_single_qubit(p_depol: float, p_damping: float = 0) -> qml.Noise
     assert 0 <= p_damping <= 1, "Amplitude damping probability must be between 0 and 1."
 
     if p_damping == 0 and p_depol >= 0:
-        return qml.NoiseModel({qml.noise.op_eq(qml.RY): qml.noise.partial_wires(qml.DepolarizingChannel, p_depol)}, name = f"depol(p={p_depol})")
+        return qml.NoiseModel({qml.noise.op_eq(qml.RY): qml.noise.partial_wires(qml.DepolarizingChannel, p_depol)}, name = f"single-qubit-depol(p-depol={p_depol})")
     
     depol_channel_kraus_reps = qml.DepolarizingChannel.compute_kraus_matrices(p_depol)
     damping_channel_kraus_reps = qml.AmplitudeDamping.compute_kraus_matrices(p_damping)
@@ -27,7 +27,7 @@ def depolarising_single_qubit(p_depol: float, p_damping: float = 0) -> qml.Noise
     def depol_and_damping(op, **metadata):
         qml.QubitChannel(kraus_list, wires=op.wires)
     
-    return qml.NoiseModel({qml.noise.op_eq(qml.RY): depol_and_damping}, name=f"depol-damp(p-depol={p_depol}, p-damp={p_damping})")
+    return qml.NoiseModel({qml.noise.op_eq(qml.RY): depol_and_damping}, name=f"single-qubit-depol-damp(p-depol={p_depol}, p-damp={p_damping})")
 
 def depolarising_two_qubit(p_depol: float, num_qubits: int, phi: dict[str, float]|None = None) -> qml.NoiseModel:
     """
