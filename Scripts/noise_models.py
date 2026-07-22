@@ -1,5 +1,5 @@
 """
-This module contains several noise models to pass into the HybridModel class (defined in qml_modules.py).
+This module contains several noise models to pass into the HybridModel class (defined in qvc_model.py).
 """
 
 from dataclasses import dataclass
@@ -10,8 +10,9 @@ from scipy.linalg import expm, logm
 
 def depolarising_single_qubit(p_depol: float, p_damping: float = 0) -> qml.NoiseModel:
     """
-    Returns a depolarising noise model for RY gates with depolarising strength p.
-    Also adds amplitude damping noise with strength amplitude_damping.
+    Returns a depolarising noise model for RY gates with depolarising strength p_depol.
+
+    Also adds amplitude damping noise with strength p_damping.
     """
     assert 0 <= p_depol <= 1, "Depolarising probability must be between 0 and 1."
     assert 0 <= p_damping <= 1, "Amplitude damping probability must be between 0 and 1."
@@ -31,16 +32,19 @@ def depolarising_single_qubit(p_depol: float, p_damping: float = 0) -> qml.Noise
 
 def depolarising_two_qubit(p_depol: float, num_qubits: int, phi: dict[str, float]|None = None) -> qml.NoiseModel:
     """
-    Returns a depolarising noise model for CZ gates with depolarising strength p.
+    Returns a depolarising noise model for CZ gates with depolarising strength p_depol.
+
     Also adds crosstalk noise with strength phi (a dictionary of Pauli-Pauli interaction strengths).
     """
     assert 0 <= p_depol <= 1, "Depolarising probability must be between 0 and 1."
 
-
-    theta = list(phi.values()) if phi is not None else [0.0] * 15
-
-    assert len(theta) == 15, "phi must be a dictionary with 15 values for the Pauli-Pauli interaction strengths."
-    assert all(-np.pi <= val <= np.pi for val in theta), "All values in phi must be between -pi and pi."
+    # Call phi to construct theta
+    if phi is not None:
+        theta = [phi.get(f"{P}{Q}", 0.0) for P in "IXYZ" for Q in "IXYZ" if not (P == "I" and Q == "I")]
+        assert all(-np.pi <= val <= np.pi for val in theta), "All values in phi must be between -pi and pi."
+    else:
+        theta = [0.0] * 15
+    
 
     unitary_channel_adjoint_rep = [qml.SpecialUnitary.compute_matrix(theta, num_wires=2)]
 

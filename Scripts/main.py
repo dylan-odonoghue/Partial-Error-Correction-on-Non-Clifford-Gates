@@ -22,8 +22,13 @@ parser.add_argument("-p", "--p", type=float, default = 0, help="Depolarising noi
 parser.add_argument("-t", "--train_size", type=int, default=600, help="Number of training samples to use (default is 600).")
 parser.add_argument("-s", "--test_size", type=int, default=250, help="Number of testing samples to use (default is 250).")
 parser.add_argument("-a", "--array", action="store_true", help="Boolean flag to indicate if the script is running as part of a SLURM array job.")
+parser.add_argument("--name_extension", type=str, default="", help="Optional string to append to the output filename for identification.")
+parser.add_argument("--shots", type=int, default=10000, help="Number of shots for quantum measurements (default is 10000).")
+parser.add_argument("--seed", type=int, default=42, help="Seed for random number generation (default is 42).")
 
 args = parser.parse_args()
+
+os.makedirs("../results", exist_ok=True)  # Ensure the results directory exists
 
 # Define noise configurations — one per array index
 if args.array:
@@ -46,7 +51,6 @@ if args.array:
     # Ensure task_id is within the bounds of noise_configs
     if task_id < len(noise_configs):
         args.p = noise_configs[task_id]["p"] # Set the noise probability based on the SLURM array task ID
-        #name_extension = f""  # Name extension for logging
     else:
         raise ValueError(f"SLURM_ARRAY_TASK_ID {task_id} is out of bounds for the defined noise configurations.")
     
@@ -64,8 +68,9 @@ serial_job(
     num_epochs=args.num_epochs,
     batch_size=args.batch_size,
     noise_model=noise_model,
-    num_shots=10000,
+    num_shots=args.shots,
     train_size=args.train_size,
     test_size=args.test_size,
-    #name_extension=name_extension if args.array else None
+    name_extension=args.name_extension,
+    random_seed=args.seed
 )

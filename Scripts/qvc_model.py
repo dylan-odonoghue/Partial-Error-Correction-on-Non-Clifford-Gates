@@ -9,7 +9,16 @@ import scipy.stats
 from typing import Union
 
 class ShotNoise(nn.Module):
-    """A stochastic layer to simulate shot noise in quantum circuits."""
+    """
+    A stochastic layer to simulate shot noise in quantum circuits.
+    
+    This layer adds Gaussian noise to the expectation values of quantum measurements to simulate the effect of finite sampling (shot noise).
+    This layer is still applied at model evaluation time. This is because the quantum circuit is still being simulated with a finite number of shots, and thus the expectation values will inherently have some noise due to the limited number of samples.
+    Args:
+        num_shots: The number of shots (samples) used in the quantum measurement.
+        device: The PyTorch device (CPU or GPU) on which the computations will be performed.
+    
+    """
     def __init__(self, num_shots, device):
         super().__init__()
         self.num_shots = num_shots
@@ -18,7 +27,7 @@ class ShotNoise(nn.Module):
         """Simulate shot noise by adding Gaussian noise to the expectation values."""
         p_positive_eigvals = (x+1)/2
         variance = 4*p_positive_eigvals*(1-p_positive_eigvals)/self.num_shots
-        expval_with_shotnoise = x + variance**0.5*torch.randn(x.shape[0],x.shape[1]).to(self.device)
+        expval_with_shotnoise = x + variance**0.5*torch.randn_like(x).to(self.device)
         return expval_with_shotnoise.clamp(min=-1,max=1)
 
 # Quantum neural network
@@ -62,8 +71,8 @@ class HybridModel(nn.Module):
         self.noise_model = noise_model
         self.classical = nn.Linear(num_qubits, 10)
 
-        for var_name, var_value in kwargs.items():
-            setattr(self, var_name, var_value)
+        assert num_qubits > 0, "Number of qubits must be a positive integer."
+        assert num_qubits % 2 == 0, "Number of qubits must be even to avoid padding in AmplitudeEmbedding."
 
         @qml.qnode(dev)
         def quantum_circuit(inputs, weights):
@@ -78,25 +87,16 @@ class HybridModel(nn.Module):
             # Amplitude encoding of the input data
             qml.AmplitudeEmbedding(inputs, wires=range(self.num_qubits), normalize=True)
 
-            @qml.for_loop(0, self.num_qubits, 2)
-            def entangling_gate_even_qubits(qubit):
-                qml.CZ(wires=[qubit, (qubit+1)%self.num_qubits])
-
-            @qml.for_loop(1, self.num_qubits, 2)
-            def entangling_gate_odd_qubits(qubit):
-                qml.CZ(wires=[qubit, (qubit+1)%self.num_qubits])
             num_layers = weights.shape[0]
             for layer in range(num_layers):
-                @qml.for_loop(0, self.num_qubits, 1)
-                def single_qubit_rotations(qubit):
+                for qubit in range(self.num_qubits):
                     qml.RZ(weights[layer, qubit, 0], wires=qubit)
                     qml.RY(weights[layer, qubit, 1], wires=qubit)
                     qml.RZ(weights[layer, qubit, 2], wires=qubit)
-
-                single_qubit_rotations()
-                entangling_gate_even_qubits()
-                entangling_gate_odd_qubits()
-
+                for qubit in range(0, self.num_qubits, 2):
+                    qml.CZ(wires=[qubit, (qubit+1)%self.num_qubits])
+                for qubit in range(1, self.num_qubits, 2):
+                    qml.CZ(wires=[qubit, (qubit+1)%self.num_qubits])
             # Measure the expectation values of Pauli-Z on each qubit
             return [qml.expval(qml.PauliZ(wires=i)) for i in range(self.num_qubits)]
 
