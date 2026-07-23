@@ -6,9 +6,8 @@ The script also supports running as part of a SLURM array job, where different n
 """
 
 import os
-import numpy as np
-import noise_models
-from train import serial_job
+import pqec.noise_models as noise_models
+from pqec.train import serial_job
 import argparse
 
 
@@ -28,7 +27,7 @@ parser.add_argument("--seed", type=int, default=42, help="Seed for random number
 
 args = parser.parse_args()
 
-os.makedirs("../results", exist_ok=True)  # Ensure the results directory exists
+os.makedirs("results", exist_ok=True)  # Ensure the results directory exists
 
 # Define noise configurations — one per array index
 if args.array:

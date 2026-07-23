@@ -5,7 +5,7 @@ This module contains several noise models to pass into the HybridModel class (de
 from dataclasses import dataclass
 import pennylane as qml
 import numpy as np
-from superop import SuperOpTools
+from .superop import SuperOpTools
 from scipy.linalg import expm, logm
 
 def depolarising_single_qubit(p_depol: float, p_damping: float = 0) -> qml.NoiseModel:

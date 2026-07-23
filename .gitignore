@@ -20,3 +20,4 @@ results/
 **/setonix_quantum_setup.sh
 **/*.slurm
 results/test_6_qubits.pkl
+early tests/

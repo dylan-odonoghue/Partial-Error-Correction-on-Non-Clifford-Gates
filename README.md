@@ -4,9 +4,10 @@ This project extends work in partial error correction and analyses the effect of
 ## File Structure
 ```
 ├── README.md
-├── Scripts
-│   ├── debug.ipynb
-│   ├── main.py
+├── debug.ipynb
+├── main.py
+├── pqec
+│   ├── __init__.py
 │   ├── noise_models.py
 │   ├── qvc_model.py
 │   ├── superop.py

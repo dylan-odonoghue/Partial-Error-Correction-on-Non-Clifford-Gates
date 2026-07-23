@@ -1,11 +1,7 @@
 # Import required libraries
 import pennylane as qml
-from pennylane import numpy as np
 import torch
 import torch.nn as nn
-from superop import SuperOpTools
-from scipy.linalg import expm, logm
-import scipy.stats
 from typing import Union
 
 class ShotNoise(nn.Module):

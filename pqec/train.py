@@ -7,7 +7,7 @@ Loads the MNIST dataset, preprocesses it, and trains a hybrid quantum-classical 
 import pennylane as qml
 from pennylane import numpy as np
 import torch
-from qvc_model import HybridModel
+from .qvc_model import HybridModel
 import pickle
 from torchvision import transforms
 import torchvision
@@ -190,15 +190,6 @@ def serial_job(num_qubits: int, layers: int = 2, num_epochs: int = 5, batch_size
         results["accuracies"][trained_samples] = correct / total
         model.train()
     if kwargs.get('save_results', True):
-        with open(f"../results/{name}.pkl", "wb") as f:
+        with open(f"results/{name}.pkl", "wb") as f:
             pickle.dump(results, f, protocol=pickle.HIGHEST_PROTOCOL)
     return
-
-if __name__ == "__main__":
-    from noise_models import depolarising_single_qubit, depolarising_two_qubit
-    # Example usage of the serial job function
-    #phi = {f"{P}{Q}": 0.0 for P in "IXYZ" for Q in "IXYZ" if not (P == "I" and Q == "I")}
-    #phi["ZZ"] = 0.00116
-    noise_model = depolarising_single_qubit(0.001)  # Example noise model  
-    #noise_model = None
-    serial_job(4, noise_model=noise_model, num_shots=10, batch_size=8, train_size=8, test_size=250, num_epochs=1, save_results=False)
