@@ -18,7 +18,9 @@ def depolarising_single_qubit(p_depol: float, p_damping: float = 0) -> qml.Noise
     assert 0 <= p_damping <= 1, "Amplitude damping probability must be between 0 and 1."
 
     if p_damping == 0 and p_depol >= 0:
-        return qml.NoiseModel({qml.noise.op_eq(qml.RY): qml.noise.partial_wires(qml.DepolarizingChannel, p_depol)}, name = f"single-qubit-depol(p-depol={p_depol})")
+        return qml.NoiseModel({qml.noise.op_eq(qml.RY): qml.noise.partial_wires(qml.DepolarizingChannel, p_depol)}, 
+                              name = f"single-qubit-depol(p-depol={p_depol})",
+                              depolarising_noise = p_depol)
     
     depol_channel_kraus_reps = qml.DepolarizingChannel.compute_kraus_matrices(p_depol)
     damping_channel_kraus_reps = qml.AmplitudeDamping.compute_kraus_matrices(p_damping)
@@ -28,7 +30,9 @@ def depolarising_single_qubit(p_depol: float, p_damping: float = 0) -> qml.Noise
     def depol_and_damping(op, **metadata):
         qml.QubitChannel(kraus_list, wires=op.wires)
     
-    return qml.NoiseModel({qml.noise.op_eq(qml.RY): depol_and_damping}, name=f"single-qubit-depol-damp(p-depol={p_depol}, p-damp={p_damping})")
+    return qml.NoiseModel({qml.noise.op_eq(qml.RY): depol_and_damping}, 
+                          name=f"single-qubit-depol-damp(p-depol={p_depol}, p-damp={p_damping})",
+                          depolarising_noise=p_depol, damping_noise=p_damping)
 
 def depolarising_two_qubit(p_depol: float, num_qubits: int, phi: dict[str, float]|None = None) -> qml.NoiseModel:
     """
@@ -46,13 +50,13 @@ def depolarising_two_qubit(p_depol: float, num_qubits: int, phi: dict[str, float
         theta = [0.0] * 15
     
 
-    unitary_channel_adjoint_rep = [qml.SpecialUnitary.compute_matrix(theta, num_wires=2)]
+    unitary_crosstalk_channel = [qml.SpecialUnitary.compute_matrix(theta, num_wires=2)]
 
     def crosstalk_noise(op, **params):
         crosstalk_nearest_neighbour_wires_1 = sorted([(op.wires[0]-1) % num_qubits, op.wires[0]])
         crosstalk_nearest_neighbour_wires_2 = sorted([op.wires[1], (op.wires[1]+1) % num_qubits])
-        qml.QubitChannel(unitary_channel_adjoint_rep, wires=crosstalk_nearest_neighbour_wires_1)
-        qml.QubitChannel(unitary_channel_adjoint_rep, wires=crosstalk_nearest_neighbour_wires_2)
+        qml.QubitChannel(unitary_crosstalk_channel, wires=crosstalk_nearest_neighbour_wires_1)
+        qml.QubitChannel(unitary_crosstalk_channel, wires=crosstalk_nearest_neighbour_wires_2)
     
     depolarising_channel_kraus_reps = qml.DepolarizingChannel.compute_kraus_matrices(p_depol)
     two_qubit_depolarising_channel_kraus_reps = [qml.math.kron(k1, k2) for k1 in depolarising_channel_kraus_reps for k2 in depolarising_channel_kraus_reps] # pyright: ignore[reportAttributeAccessIssue]
@@ -68,4 +72,4 @@ def depolarising_two_qubit(p_depol: float, num_qubits: int, phi: dict[str, float
     return qml.NoiseModel({
         qml.noise.op_eq(qml.CZ): crosstalk_noise,
         qml.noise.op_eq(qml.CZ): depolarising_noise
-    }, name=name)
+    }, name=name, depolarising_noise=p_depol, crosstalk_noise=phi)

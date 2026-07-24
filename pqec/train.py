@@ -57,7 +57,7 @@ def preprocess_MNIST_data(num_qubits: int, train_size: int = 60000, test_size: i
 
 
 def serial_job(num_qubits: int, layers: int = 2, num_epochs: int = 5, batch_size: int = 50, noise_model=None, random_seed: int = 42, lr: float = 0.005,
-               num_shots: int = 10000, train_size: int = 60000, test_size: int = 10000, name_extension: str = "", **kwargs):
+               num_shots: int = 10000, train_size: int = 60000, test_size: int = 10000, name_extension: str = "", save_dir: str = "results/", **kwargs):
     """
     Function to run the Hybrid Quantum-Classical model. This function is called by the `main.py` script.
     
@@ -74,17 +74,18 @@ def serial_job(num_qubits: int, layers: int = 2, num_epochs: int = 5, batch_size
         train_size: Number of training samples to use (default is 60000).
         test_size: Number of testing samples to use (default is 10000).
         name_extension: Optional string to append to the output filename for identification.
+        save_dir: Directory to save the training results (default is "results/").
     Returns:
         None. Training results are saved to a pickle file.
     """
-    arg_metadata = locals()  # Capture all current local variables for logging and saving
-    noise_model_name = noise_model.metadata['name'] if noise_model is not None else "none"  # Name of the noise model for logging
-    arg_metadata['noise_model'] = noise_model_name  # Add noise model name to metadata, replacing the NoiseModel function object for easier serialization
+    arg_metadata = noise_model.metadata if noise_model is not None else {} 
+    arg_metadata.update(locals())  # Store all local variables in metadata for reproducibility
+    arg_metadata['noise_model'] = noise_model.metadata.get('name', 'Unknown') if noise_model is not None else "None"
     random.seed(random_seed)
     np.random.seed(random_seed) # pyright: ignore[reportAttributeAccessIssue]
     torch.manual_seed(random_seed)
 
-    name = f"training_qubits_{num_qubits}_layers_{layers}_epochs_{num_epochs}_batch_{batch_size}_shots_{num_shots}_noise_{noise_model_name}{name_extension}"
+    name = f"training_qubits_{num_qubits}_layers_{layers}_epochs_{num_epochs}_batch_{batch_size}_shots_{num_shots}_noise_{arg_metadata['noise_model']}{name_extension}"
 
     # Check CUDA availability
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -119,7 +120,6 @@ def serial_job(num_qubits: int, layers: int = 2, num_epochs: int = 5, batch_size
         'loss_values': [],
         'gradients': [],
         'metadata': arg_metadata,
-        'state_dict': model.state_dict()  # Save the model's state dictionary for later use
     }
     trained_samples = 0
     
@@ -186,10 +186,9 @@ def serial_job(num_qubits: int, layers: int = 2, num_epochs: int = 5, batch_size
                 _, predicted = torch.max(outputs, dim=1)
                 correct += (predicted == labels).sum().item()
                 total   += labels.size(0)
-        results['state_dict'] = model.state_dict()  # Update the state dictionary after each epoch
         results["accuracies"][trained_samples] = correct / total
         model.train()
     if kwargs.get('save_results', True):
-        with open(f"results/{name}.pkl", "wb") as f:
+        with open(f"{save_dir}/{name}.pkl", "wb") as f:
             pickle.dump(results, f, protocol=pickle.HIGHEST_PROTOCOL)
     return

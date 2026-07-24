@@ -71,5 +71,6 @@ serial_job(
     train_size=args.train_size,
     test_size=args.test_size,
     name_extension=args.name_extension,
-    random_seed=args.seed
+    random_seed=args.seed,
+    p_depol=args.p
 )
